@@ -1,6 +1,7 @@
 #include <assert.h>
 #include "threadpool.h"
 
+
 threadpool_t *create_threadpool(int thread_num, int max_tasknum)
 {
     assert(thread_num > 0);
@@ -60,12 +61,48 @@ int destroy_threadpool(threadpool_t *pool)
 
 int add_task_threadpool(threadpool_t *pool, task_func_t func, void *args)
 {
-    return 0;
+    if (!pool)
+    {
+        return STATUS_FAILED;
+    }
+    if (!func)
+    {
+        return STATUS_FAILED;
+    }
+    if (pool->cur_tasknum > pool->max_tasknum)
+    {
+        return STATUS_FAILED;
+    }
+
+    task_t *task = (task_t *)malloc(sizeof(task_t));
+    if (task == NULL)
+    {
+        return STATUS_FAILED;
+    }
+
+    task->func = func;
+    task->args = args;
+
+    /*加锁确保互斥*/
+    pthread_mutex_lock(&pool->mutex);
+    list_add_head(&task->node, &pool->tlist); //新任务添加到任务链表头部
+    pool->cur_tasknum++;
+    pthread_mutex_unlock(&pool->mutex);
+
+    pthread_cond_signal(&pool->cond);         //通知任务处理线程可以执行
+    return STATUS_SUCCESS;
 }
 
 int get_tasknum_threadpool(threadpool_t *pool)
 {
-    return 0;
+    if (pool)
+    {
+        return pool->cur_tasknum;
+    }
+    else
+    {
+        return -1;
+    }
 }
 
 static void *task_process_thread(void *args)

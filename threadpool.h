@@ -93,4 +93,11 @@ int add_task_threadpool(threadpool_t *pool, task_func_t func, void *args);
  */
 int get_tasknum_threadpool(threadpool_t *pool);
 
+/*
+/*@brief 任务处理函数
+/*
+/*@param args 参数
+/*@return void* 
+ */
+static void *task_process_thread(void *args);
 #endif /* __THREADPOOL_H__ */
